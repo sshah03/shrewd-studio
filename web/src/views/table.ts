@@ -5,6 +5,7 @@ import type { Method, Model, Row, Teacher } from "../api";
 import { jobFor } from "../jobs";
 import { S, perK, qIdx } from "../state";
 import { approx, esc, methodSize, n, pctOf, SHIPPED_TAG } from "../util";
+import { installNote, missing } from "./drawers";
 
 export const FILTERS = { all: "All rows", needs: "Needs you", disagree: "Teachers disagree", vsyou: "Teachers differ from you", local: "Local model differs", routed: "Sent to teachers by backup" } as const;
 
@@ -41,6 +42,9 @@ function methodBody(m: Model, x: Method) {
     return `<span class="colprog ${x.state === "paused" ? "paused" : ""}" role="progressbar" aria-label="${esc(x.name)} progress" aria-valuenow="${pctOf(job?.progress ?? x.progress)}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pctOf(job?.progress ?? x.progress)}%"></i></span><div class="sub">${esc(note)}</div>`;
   }
   if (x.state === "queued") return `<div class="sub">${esc(job?.message ?? x.note ?? "waiting")}</div>`;
+  // trained here, but its extra isn't installed now (after `uv tool upgrade`, say): it can't answer
+  const miss = missing(x.id.replace(/^compared-/, ""));
+  if (miss) return `<div class="sub">${installNote(miss)}</div>`;
   // the same tuning examples as the teachers' scores, so columns compare; speed, size and the
   // test score live in the Compare drawer
   const tip = [x.test ? `Test ${qi.map(j => `${x.test![j]}%`).join(" ")}` : "", x.ms != null ? `${x.ms} ms per document` : "", methodSize(x)?.text ?? ""].filter(Boolean).join(", ");

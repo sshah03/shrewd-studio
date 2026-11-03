@@ -1,7 +1,7 @@
 // Background jobs. While anything is queued or running, poll GET /api/jobs every 1.5 s. When a job
 // finishes, refresh the sidebar and, if its model is open, the model and its rows.
 import { api, type Job } from "./api";
-import { loadModels, loadModel, loadRows, loadSettings } from "./data";
+import { answerPlayground, loadModels, loadModel, loadRows, loadSettings } from "./data";
 import { renderJobs } from "./render";
 import { S } from "./state";
 import { toast } from "./util";
@@ -41,7 +41,15 @@ async function tick() {
     } else if (j.state === "failed") toast(`${j.model_name}: ${j.title.toLowerCase()} failed${j.error ? `. ${j.error}` : ""}`);
     else if (j.state === "done") toast(`${j.model_name}: ${j.title.toLowerCase()} finished`);
   }
-  if (ended.some(j => j.kind === "install")) void loadSettings();
+  if (ended.some(j => j.kind === "install")) {
+    // a method that couldn't answer without this extra can now: fill in what's on screen
+    const fill = ended.some(j => j.kind === "install" && j.state === "done");
+    void loadSettings().then(() => {
+      if (!fill) return;
+      if (S.route.page === "playground") void answerPlayground();
+      else if (S.route.page === "model") void loadRows(true);
+    });
+  }
   if (ended.length) {
     void loadModels();
     const open = S.route.page === "model" ? S.route.id : null;

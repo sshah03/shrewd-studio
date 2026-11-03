@@ -6,6 +6,7 @@ import { pickKey } from "../data";
 import { S } from "../state";
 import { approx, esc, SHIPPED_TAG } from "../util";
 import { mod } from "../system";
+import { installNote, missing } from "./drawers";
 
 const modelOf = (id: string) => S.play.models?.find(x => x.id === id);
 
@@ -55,7 +56,8 @@ function results() {
   const cols = P.picks.map(p => ({ p, m: modelOf(p.model) })).filter((x): x is { p: PlayPick; m: PlayModel } => !!x.m);
   const head = cols.map(({ p, m }) => {
     const meth = m.methods.find(x => x.id === p.method);
-    return `<th scope="col"><div class="colname">${esc(m.name)}</div><div class="sub">${esc(meth?.name ?? p.method)}${meth?.shipped ? SHIPPED_TAG : ""}</div></th>`;
+    const miss = missing(p.method.replace(/^compared-/, ""));   // trained here, but can't run now
+    return `<th scope="col"><div class="colname">${esc(m.name)}</div><div class="sub">${esc(meth?.name ?? p.method)}${meth?.shipped ? SHIPPED_TAG : ""}</div>${miss ? `<div class="sub">${installNote(miss)}</div>` : ""}</th>`;
   }).join("");
   return `<table class="mini play-t"><thead><tr><th scope="col">Document</th>${head}<th></th></tr></thead><tbody>
     ${P.docs.map((d, i) => `<tr><td class="play-doc"><div>${esc(d.text)}</div></td>

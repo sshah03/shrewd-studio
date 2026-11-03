@@ -137,7 +137,7 @@ export function missing(id: string): Extra | null {
   return e && !e.installed ? e : null;
 }
 
-function installNote(e: Extra) {
+export function installNote(e: Extra) {
   const job = e.job ? S.jobs?.now.find(j => j.id === e.job!.id) : undefined;
   if (job) return esc(job.message || "Installing…");
   return `Not installed <button class="btn plain" data-act="install" data-extra="${esc(e.id)}" title="Installs into the Python Studio runs on. Downloads ${esc(e.download)}.">Install…</button>`;
