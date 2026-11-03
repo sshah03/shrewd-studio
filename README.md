@@ -48,7 +48,7 @@ uv tool install git+https://github.com/sshah03/shrewd-studio
 
 [pipx](https://pipx.pypa.io/) works the same way: `pipx install git+https://github.com/sshah03/shrewd-studio`. Both put a `shrewd-studio` command in `~/.local/bin`, which is where the desktop app looks for it.
 
-**In your browser:** run `shrewd-studio`. It opens on `http://127.0.0.1:8765`.
+**In your browser:** run `shrewd-studio`. It opens on `http://127.0.0.1:8765`, or the next free port if something else is using that one.
 
 **As a desktop app:** download it for your system from this repo's [Releases](https://github.com/sshah03/shrewd-studio/releases) page and open it. **It has only been thoroughly tested on Apple silicon Macs so far, so please be patient if there are issues on other platforms, and we will address them asap.** The builds aren't signed, so the first time you open it:
 

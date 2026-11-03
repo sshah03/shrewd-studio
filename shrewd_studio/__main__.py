@@ -14,11 +14,40 @@ import webbrowser
 from shrewd_studio import NOISE
 from shrewd_studio.settings import DEFAULT_WORKSPACE
 
+DEFAULT_PORT = 8765
+
 
 def free_port():
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
+
+
+def port_open(port):
+    """Whether Studio could listen on this port (set up the way uvicorn binds it)."""
+    with socket.socket() as s:
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            s.bind(("127.0.0.1", port))
+        except OSError:
+            return False
+        return True
+
+
+def pick_port(asked):
+    """The port to serve on. Without --port it's 8765, or the next free one after it when
+    something else already has it (as Jupyter does); a port asked for must be free."""
+    if asked == 0:
+        return free_port()
+    if asked is not None:
+        if not port_open(asked):
+            sys.exit(f"shrewd-studio: port {asked} is already in use; choose another with --port, "
+                     "or --port 0 for any free one")
+        return asked
+    for port in range(DEFAULT_PORT, DEFAULT_PORT + 20):
+        if port_open(port):
+            return port
+    return free_port()
 
 
 def main(argv=None):
@@ -36,7 +65,8 @@ def main(argv=None):
                         help="folder holding your model folders (default: "
                              "$SHREWD_STUDIO_WORKSPACE, else the folder chosen in Settings, "
                              "else shrewd-models in your home folder)")
-    parser.add_argument("--port", type=int, default=8765, help="0 picks a free port")
+    parser.add_argument("--port", type=int, default=None,
+                        help=f"default {DEFAULT_PORT}, or the next free one; 0 picks any free port")
     parser.add_argument("--no-browser", action="store_true", help="don't open a browser tab")
     parser.add_argument("--sandbox", action="store_true",
                         help="simulated teachers: no API keys, no spending (for trying Studio)")
@@ -72,7 +102,7 @@ def main(argv=None):
         made = samples.build(workspace)
         print(f"added {len(made)} sample models" if made else "sample models already there")
 
-    port = args.port or free_port()
+    port = pick_port(args.port)
     again = []
 
     def restart():
