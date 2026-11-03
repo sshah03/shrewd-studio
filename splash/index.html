@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shrewd Studio</title>
+<style>
+  :root { --bg: #ffffff; --fg: #161817; --muted: #868b88; --red: #b3412f; color-scheme: light; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #151716; --fg: #ecedec; --muted: #8a8f8c; --red: #ea8c7a; color-scheme: dark; } }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--fg); font: 13px/1.5 "Inter", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+    display: grid; place-items: center; }
+  main { display: grid; gap: 10px; justify-items: center; text-align: center; max-width: 420px; padding: 24px; }
+  b { font-size: 15px; font-weight: 600; }
+  .name { font-size: 17px; letter-spacing: -.02em; }
+  .name b { font-weight: 600; }
+  p { margin: 0; color: var(--muted); }
+  p.err { color: var(--red); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .fix { display: grid; gap: 8px; justify-items: center; width: 100%; }
+  .fix[hidden] { display: none; }
+  code { display: block; box-sizing: border-box; width: 100%; padding: 8px 10px; border-radius: 7px; text-align: left; user-select: all;
+    font: 12px/1.4 ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace; overflow-wrap: anywhere;
+    background: color-mix(in srgb, var(--fg) 7%, transparent); color: var(--fg); }
+  .row { display: flex; gap: 8px; }
+  button { font: inherit; font-size: 12.5px; padding: 4px 12px; border-radius: 6px; cursor: default;
+    border: 1px solid color-mix(in srgb, var(--fg) 18%, transparent); background: transparent; color: var(--fg); }
+  button.go { background: #2a63dc; border-color: #2a63dc; color: #fff; }
+  .spin { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid color-mix(in srgb, var(--fg) 20%, transparent); border-top-color: var(--fg); animation: sp .9s linear infinite; }
+  @keyframes sp { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+</style>
+</head>
+<body>
+<main>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="40" height="40" aria-hidden="true">
+  <defs><linearGradient id="mark-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3170e9"/><stop offset="1" stop-color="#1846be"/></linearGradient></defs>
+  <rect width="100" height="100" rx="23" fill="url(#mark-g)"/>
+  <g stroke="#fff" stroke-opacity=".45" stroke-width="3.2" stroke-linecap="round">
+    <path d="M24.5 32 50 70.5M50 25.1v45.4M75.5 32 50 70.5"/>
+  </g>
+  <g fill="#d6e2fc"><circle cx="24.5" cy="32" r="6.6"/><circle cx="50" cy="25.1" r="6.6"/><circle cx="75.5" cy="32" r="6.6"/></g>
+  <circle cx="50" cy="70.5" r="12.6" fill="#fff"/>
+</svg>
+  <div class="name"><b>shrewd</b> studio</div>
+  <div class="spin" id="spin"></div>
+  <p id="msg">Starting the local server…</p>
+  <div class="fix" id="fix" hidden>
+    <code id="cmd"></code>
+    <p id="uvnote" hidden>This uses uv (docs.astral.sh/uv). pipx install works the same way.</p>
+    <div class="row">
+      <button id="copy" hidden>Copy</button>
+      <button class="go" id="retry">Try again</button>
+    </div>
+  </div>
+</main>
+<script>
+  // text: why the server didn't start. install: the command that installs Studio, when that's
+  // what's missing. Try again reloads this page with ?retry, which has the app start it again.
+  window.showStartupError = (text, install) => {
+    document.getElementById('spin').hidden = true;
+    const p = document.getElementById('msg');
+    p.textContent = text;
+    p.className = install ? '' : 'err';
+    document.getElementById('fix').hidden = false;
+    const cmd = document.getElementById('cmd'), copy = document.getElementById('copy');
+    cmd.hidden = copy.hidden = document.getElementById('uvnote').hidden = !install;
+    cmd.textContent = install || '';
+    copy.onclick = async () => {
+      try { await navigator.clipboard.writeText(install); copy.textContent = 'Copied'; }
+      catch { getSelection().selectAllChildren(cmd); copy.textContent = 'Press ⌘C or Ctrl+C'; }
+    };
+  };
+  document.getElementById('retry').onclick = () => {
+    document.getElementById('fix').hidden = true;
+    document.getElementById('spin').hidden = false;
+    const p = document.getElementById('msg');
+    p.textContent = 'Starting the local server…';
+    p.className = '';
+    location.replace(location.pathname + '?retry=' + Date.now());
+  };
+</script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+[package]
+name = "shrewd-studio-desktop"
+description = "Shrewd Studio desktop shell (Tauri 2): starts the local Studio server and opens a window on it."
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+rust-version = "1.80"
+
+[lib]
+name = "shrewd_studio_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "=2.7.4", features = [] }
+
+[dependencies]
+tauri = { version = "=2.12.5", features = [] }
+
+# Debug builds: line numbers in backtraces for this crate, and no debug info for the ~400
+# dependencies, which nobody steps through. Keeps target/debug at a fraction of its size.
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false

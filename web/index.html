@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shrewd Studio</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@100,400;100,500;100,600;100,700&display=swap" />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <script>
+      // Apply the stored theme before the first paint.
+      try { const t = localStorage.getItem("studio.theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch {}
+    </script>
+  </head>
+  <body>
+    <div class="app" id="app">
+      <header class="titlebar" id="titlebar" data-tauri-drag-region></header>
+      <div id="side"></div>
+      <div class="main" id="main"><div id="view"></div><div id="layer"></div></div>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+    <input type="file" id="file-pick" accept=".csv,text/csv" hidden />
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

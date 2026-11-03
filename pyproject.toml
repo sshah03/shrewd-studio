@@ -1,0 +1,54 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "shrewd-studio"
+dynamic = ["version"]
+description = "A local app for building shrewd models: label with LLM teachers, review, train, use."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+dependencies = [
+    "shrewd[teacher]>=0.5",
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "python-multipart>=0.0.9",
+    "keyring>=25",
+    # deleting a model moves it to the Recycle Bin or the Linux trash; macOS needs nothing
+    "send2trash>=1.8; sys_platform != 'darwin'",
+]
+
+[project.optional-dependencies]
+# every local method up front (embeddings, SetFit, encoders: about 1 GB, mostly PyTorch),
+# instead of installing them from Settings when they're first wanted
+all = ["shrewd[all]>=0.5"]
+# the tests compare two methods, so they need the embeddings extra
+dev = ["pytest>=8", "ruff>=0.5", "httpx>=0.27", "shrewd[embed]"]
+
+[project.scripts]
+shrewd-studio = "shrewd_studio.__main__:main"
+
+[tool.hatch.version]
+path = "shrewd_studio/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["shrewd_studio"]
+# the built frontend ships in the wheel; web/ (its source) does not
+artifacts = ["shrewd_studio/static/**"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Body", "fastapi.File"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["shrewd_studio"]

@@ -1,0 +1,18 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+web/node_modules/
+src-tauri/target/
+src-tauri/gen/
+dist/
+demo-workspace/
+.DS_Store
+samples-workspace/
+
+# design notes and prototypes, kept local
+BUILD.md
+DESIGN.md
+KNOWN_ISSUES.md
+mockup/
