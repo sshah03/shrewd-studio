@@ -387,6 +387,7 @@ async function start() {
   render();
   pollJobs();
   await loadModels();
+  if (!S.settings) void loadSettings();   // the title bar says when this is the sandbox
   if (S.route.page === "home") goHome(); else route();
 }
 void start();

@@ -12,7 +12,7 @@ export function titlebar() {
       <label class="find">${ICON_FIND}<input id="find" type="search" placeholder="Search models and documents" value="${esc(S.find.q)}" aria-label="Search models and documents" autocomplete="off"><kbd>${mod()}K</kbd></label>
       ${S.find.open && S.find.results ? findResults() : ""}
     </div>
-    <div class="tb-right" data-tauri-drag-region>${jobsIndicator()}</div>`;
+    <div class="tb-right" data-tauri-drag-region>${sandboxNote()}${jobsIndicator()}</div>`;
 }
 
 function findResults() {
@@ -23,6 +23,12 @@ function findResults() {
     ${r.models.length ? `<div class="find-h">Models</div>${r.models.map(m => `<button role="option" data-act="find-model" data-id="${esc(m.id)}">${esc(m.name)}</button>`).join("")}` : ""}
     ${r.documents.length ? `<div class="find-h">Documents</div>${r.documents.map(d => `<button role="option" data-act="find-doc" data-id="${esc(d.model)}" data-set="${esc(d.set)}"><span class="find-text">${esc(d.text)}</span><span class="dim">${esc(d.model_name)}, ${set[d.set] ?? d.set}</span></button>`).join("")}` : ""}
   </div>`;
+}
+
+/** Sandbox mode, on every screen: its jobs show what real calls would have cost. */
+function sandboxNote() {
+  if (!S.settings?.sandbox) return "";
+  return `<span class="tb-sandbox" title="Studio was started with --sandbox. Teachers are simulated on this computer, so nothing is sent anywhere and nothing is charged. Prices and costs show what the same calls would cost for real.">Sandbox: teachers are simulated</span>`;
 }
 
 function jobsIndicator() {
