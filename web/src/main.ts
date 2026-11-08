@@ -40,6 +40,33 @@ function goHome() {
   route();
 }
 
+/* ---------------- title bar search ---------------- */
+// The magnifying glass widens into the search field while focus is in it, and folds back when focus
+// leaves (not when the window does: coming back would fold and widen it again).
+document.addEventListener("focusin", e => {
+  if (S.find.expanded || !(e.target as HTMLElement).closest?.("#tb-find")) return;
+  S.find.expanded = true;
+  if (S.find.q.trim() && S.find.results) S.find.open = true;
+  renderTitlebar();
+});
+document.addEventListener("focusout", e => {
+  if (!S.find.expanded || !document.hasFocus() || !(e.target as HTMLElement).closest?.("#tb-find")) return;
+  if ((e.relatedTarget as HTMLElement | null)?.closest?.("#tb-find")) return;
+  S.find.expanded = false;
+  S.find.open = false;
+  renderTitlebar();
+});
+// Clicking a result keeps focus in the field, so the results stay put until the click lands
+// (WebKit doesn't focus buttons on click; the field would lose focus and fold first).
+document.addEventListener("mousedown", e => {
+  if ((e.target as HTMLElement).closest?.(".find-pop")) e.preventDefault();
+});
+
+/** The desktop app's View menu: "Always Show Search" keeps the field open. The app passes it in the
+ * URL (?search=pinned) so the first paint is right, and calls this when it's toggled. */
+function pinSearch(on: boolean) { document.documentElement.classList.toggle("search-pinned", on); }
+(window as unknown as { studioView: (v: { alwaysShowSearch?: boolean }) => void }).studioView = v => pinSearch(!!v.alwaysShowSearch);
+
 /* ---------------- clicks ---------------- */
 document.addEventListener("click", e => {
   const target = e.target as HTMLElement;
@@ -240,16 +267,21 @@ function trapTab(e: KeyboardEvent) {
 
 document.addEventListener("keydown", e => {
   const t = e.target as HTMLElement;
-  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); document.getElementById("find")?.focus(); return; }
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+    e.preventDefault();
+    const find = document.getElementById("find") as HTMLInputElement | null;
+    find?.focus(); find?.select();
+    return;
+  }
   if (t.id === "find") {
-    if (e.key === "Escape") { closeFind(); renderTitlebar(); (t as HTMLInputElement).blur(); }
+    if (e.key === "Escape") { closeFind(); renderTitlebar(); }
     else if (e.key === "ArrowDown") { e.preventDefault(); document.querySelector<HTMLElement>(".find-pop button")?.focus(); }
     else if (e.key === "Enter") { e.preventDefault(); document.querySelector<HTMLElement>(".find-pop button")?.click(); }
     return;
   }
   if (t.closest?.(".find-pop") && (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Escape")) {
     e.preventDefault();
-    if (e.key === "Escape") { closeFind(); renderTitlebar(); document.getElementById("find")?.focus(); return; }
+    if (e.key === "Escape") { document.getElementById("find")?.focus(); closeFind(false); renderTitlebar(); return; }
     const items = [...document.querySelectorAll<HTMLElement>(".find-pop button")];
     const i = items.indexOf(t);
     (e.key === "ArrowDown" ? items[i + 1] : items[i - 1] ?? document.getElementById("find"))?.focus();
@@ -374,6 +406,7 @@ function markDesktop() {
   try { if (desktop) sessionStorage.setItem("desktop", "1"); else desktop = sessionStorage.getItem("desktop") === "1"; } catch { /* storage blocked */ }
   document.documentElement.classList.toggle("desktop", desktop);
   document.documentElement.classList.toggle("mac", system().os === "mac");
+  if (desktop) pinSearch(new URLSearchParams(location.search).get("search") === "pinned");
 }
 
 async function start() {

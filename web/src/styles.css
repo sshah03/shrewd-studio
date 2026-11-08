@@ -328,14 +328,23 @@ html.desktop.mac .titlebar { padding-left: 84px; grid-template-columns: 144px mi
 .icon { width: 30px; height: 28px; border-radius: 7px; display: inline-grid; place-items: center; color: var(--ink-3); }
 .icon:hover { background: var(--hover); color: var(--ink); }
 .icon[aria-pressed="false"] { color: var(--ink-3); }
-.tb-find { justify-self: center; width: min(460px, 100%); position: relative; }
-.find { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 8px 0 10px; border-radius: 8px; background: var(--window); border: 1px solid var(--btn-border); color: var(--ink-3); }
+/* search: a magnifying glass at the right end that widens leftward into the field (focus, or ⌘K);
+   html.search-pinned (the app's View menu) keeps it open. What's running sits to its left. */
+.tb-find { position: relative; flex: none; width: 30px; transition: width .16s cubic-bezier(.2,.8,.2,1); }
+.tb-find.open, html.search-pinned .tb-find { width: min(320px, 32vw); }
+.find { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 8px 0 7px; border-radius: 8px; overflow: hidden; cursor: pointer;
+  background: transparent; border: 1px solid transparent; color: var(--ink-3); transition: background-color .16s, border-color .16s, color .16s; }
+.tb-find:not(.open) .find:hover { background: var(--hover); color: var(--ink); }
+.tb-find.open .find, html.search-pinned .find { background: var(--window); border-color: var(--btn-border); cursor: text; }
+.find svg { flex: none; }
 .find:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
-.find input { flex: 1; min-width: 0; border: 0; height: 28px; padding: 0; background: transparent; color: var(--ink); box-shadow: none; }
+.find input { flex: 1; min-width: 0; border: 0; height: 28px; padding: 0; background: transparent; color: var(--ink); box-shadow: none; opacity: 0; transition: opacity .12s; }
 .find input:focus { outline: none; box-shadow: none; }
 .find input::-webkit-search-cancel-button { display: none; }
-.find kbd { flex: none; }
-.find-pop { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: var(--window); border: 1px solid var(--rule-2); border-radius: 10px;
+.find kbd { flex: none; opacity: 0; transition: opacity .12s; }
+.tb-find.open .find :is(input, kbd), html.search-pinned .find :is(input, kbd) { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .tb-find, .find, .find input, .find kbd { transition: none; } }
+.find-pop { position: absolute; top: calc(100% + 6px); right: 0; width: min(440px, calc(100vw - 32px)); background: var(--window); border: 1px solid var(--rule-2); border-radius: 10px;
   box-shadow: 0 12px 32px rgba(16,24,40,.14); padding: 6px; display: grid; max-height: 60vh; overflow: auto; }
 .find-pop button { display: grid; gap: 1px; text-align: left; padding: 7px 10px; border-radius: 7px; }
 .find-pop button:hover, .find-pop button:focus-visible { background: var(--hover); outline: none; }
@@ -343,7 +352,10 @@ html.desktop.mac .titlebar { padding-left: 84px; grid-template-columns: 144px mi
 .find-pop .dim { font-size: 12px; }
 .find-h { font-size: 12px; font-weight: 500; color: var(--ink-3); padding: 8px 10px 4px; }
 .find-empty { padding: 10px; color: var(--ink-3); }
-.tb-right { justify-self: end; display: flex; align-items: center; gap: 6px; }
+.tb-right { justify-self: end; display: flex; align-items: center; gap: 6px; min-width: 0; }
+.tb-mid { align-self: stretch; }
+.tb-status { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.tb-status:empty { display: none; }
 .tb-sandbox { color: var(--ink-3); font-size: 12.5px; white-space: nowrap; padding: 0 4px; cursor: default; }
 .tb-jobs { display: inline-flex; align-items: center; gap: 8px; height: 28px; padding: 0 10px; border-radius: 7px; color: var(--ink-2); font-size: 12.5px; max-width: 320px; }
 .tb-jobs:hover { background: var(--hover); }

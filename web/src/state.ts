@@ -64,8 +64,8 @@ export const S = {
   guide: null as { tab: GuideTab } | null,
   /** Column widths the user dragged, per model, by column key. */
   colW: {} as Record<string, Record<string, number>>,
-  /** The title bar's search across models and documents. */
-  find: { q: "", open: false, results: null as SearchResults | null },
+  /** The title bar's search across models and documents; expanded while it has focus. */
+  find: { q: "", open: false, results: null as SearchResults | null, expanded: false },
   /** A search to apply once the model it points at has opened. */
   pendingSearch: null as { set: SetName; search: string } | null,
   allMethods: true,

@@ -135,7 +135,14 @@ act("find-doc", el => {
     navigate(`#/m/${encodeURIComponent(el.dataset.id!)}`);
   }
 });
-export function closeFind() { S.find = { q: "", open: false, results: null }; }
+/** Clear the title bar's search and, unless focus should stay in it, leave it (which folds it back to its icon). */
+export function closeFind(blur = true) {
+  Object.assign(S.find, { q: "", open: false, results: null });
+  const input = document.getElementById("find") as HTMLInputElement | null;
+  if (!input) return;
+  input.value = "";
+  if (blur) input.blur();
+}
 act("settings", () => navigate("#/settings"));
 act("playground", () => navigate("#/playground"));
 
