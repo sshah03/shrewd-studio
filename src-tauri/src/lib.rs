@@ -12,6 +12,10 @@
 //! shrewd-models in the home folder), the same as from a terminal. Changing a folder in
 //! Settings restarts the server in place (same process, same port); it prints its URL again
 //! and the window follows it.
+//!
+//! The View menu's "Always Show Search" keeps the page's search field open instead of folded to
+//! a magnifying glass. The shell remembers it (view.txt in the app's config folder) and tells
+//! the page: in the URL it opens, so the first paint is right, and by calling its studioView.
 
 use std::collections::VecDeque;
 use std::ffi::OsString;
@@ -21,6 +25,7 @@ use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+use tauri::menu::{CheckMenuItem, Menu, MenuItemKind, PredefinedMenuItem, Submenu};
 use tauri::webview::PageLoadEvent;
 use tauri::{Manager, RunEvent, Url};
 
@@ -28,6 +33,58 @@ struct Server(Mutex<Option<Child>>);
 /// Why the server didn't start, kept so the splash page can show it whenever it finishes
 /// loading: the message, and the command that installs Studio when that's what's missing.
 struct StartupError(Mutex<Option<(String, Option<String>)>>);
+
+/// The View menu item that keeps the search field open, and how view.txt says it's on.
+const SHOW_SEARCH: &str = "always-show-search";
+
+fn view_file(app: &tauri::AppHandle) -> Option<PathBuf> {
+    app.path().app_config_dir().ok().map(|dir| dir.join("view.txt"))
+}
+
+fn search_pinned(app: &tauri::AppHandle) -> bool {
+    view_file(app)
+        .and_then(|f| std::fs::read_to_string(f).ok())
+        .is_some_and(|text| text.lines().any(|l| l.trim() == SHOW_SEARCH))
+}
+
+fn save_search_pinned(app: &tauri::AppHandle, on: bool) {
+    let Some(file) = view_file(app) else { return };
+    if let Some(dir) = file.parent() {
+        let _ = std::fs::create_dir_all(dir);
+    }
+    let _ = std::fs::write(file, if on { format!("{SHOW_SEARCH}\n") } else { String::new() });
+}
+
+/// Tell the page (if it's Studio's, not the splash page) whether to keep search open.
+fn tell_view(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let on = search_pinned(app);
+        let _ = window.eval(format!("window.studioView && window.studioView({{alwaysShowSearch: {on}}})"));
+    }
+}
+
+/// The platform's usual menu with "Always Show Search" at the top of View. macOS's menu has a
+/// View menu (Enter Full Screen); elsewhere one is added before Window and Help.
+fn menu(app: &tauri::AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
+    let menu = Menu::default(app)?;
+    let item = CheckMenuItem::with_id(app, SHOW_SEARCH, "Always Show Search", true, search_pinned(app), None::<&str>)?;
+    let view = menu.items()?.into_iter().find_map(|kind| match kind {
+        MenuItemKind::Submenu(sub) if sub.text().ok().as_deref() == Some("View") => Some(sub),
+        _ => None,
+    });
+    match view {
+        Some(view) => {
+            view.insert(&item, 0)?;
+            view.insert(&PredefinedMenuItem::separator(app)?, 1)?;
+        }
+        None => {
+            let view = Submenu::with_items(app, "View", true, &[&item])?;
+            let at = menu.items()?.len().saturating_sub(2);
+            menu.insert(&view, at)?;
+        }
+    }
+    Ok(menu)
+}
 
 /// How the splash page says to install Studio's Python package when it isn't found. uv puts
 /// the command in ~/.local/bin, which the shell searches on every system (see search_path).
@@ -266,8 +323,8 @@ fn start(app: &tauri::AppHandle) -> Result<(), Problem> {
                 started = true;
                 wait_for(&url);
                 // tells the page it is inside the app window, which draws its own frame and
-                // title bar
-                url.set_query(Some("desktop=1"));
+                // title bar, and whether to keep search open
+                url.set_query(Some(if search_pinned(&handle) { "desktop=1&search=pinned" } else { "desktop=1" }));
                 if let Some(window) = handle.get_webview_window("main") {
                     let _ = window.navigate(url);
                 }
@@ -320,6 +377,23 @@ pub fn run() {
                 spawn_start(app.clone());
             } else {
                 eval_error(app);
+            }
+            tell_view(app);
+        })
+        .menu(menu)
+        .on_menu_event(|app, event| {
+            if event.id() != SHOW_SEARCH {
+                return;
+            }
+            // the item has already toggled itself. Menu::get looks only at the top level, and the
+            // item is inside View, so look in each submenu.
+            let item = app.menu().and_then(|m| m.items().ok()).into_iter().flatten().find_map(|kind| match kind {
+                MenuItemKind::Submenu(sub) => sub.get(SHOW_SEARCH),
+                _ => None,
+            });
+            if let Some(MenuItemKind::Check(item)) = item {
+                save_search_pinned(app, item.is_checked().unwrap_or(false));
+                tell_view(app);
             }
         })
         .setup(|app| {

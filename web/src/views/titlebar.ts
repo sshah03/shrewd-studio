@@ -1,18 +1,44 @@
-// The title bar: search across every model in the middle, and what's running on the right.
+// The title bar: what's running, then search across every model, at its right end. Search is a
+// magnifying glass that widens into a field when clicked or on ⌘K; the desktop app's View menu
+// can keep it open ("Always Show Search", html.search-pinned).
 // In the app the traffic lights sit at its left end.
+//
+// The search field is drawn once and kept: redrawing it would restart its widening and lose the
+// caret, and the title bar is redrawn on every render (jobs polling). Only the status and the
+// results are redrawn, and only when they change.
 import { S } from "../state";
 import { esc } from "../util";
 import { mod } from "../system";
 
 const ICON_FIND = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3" stroke-linecap="round"/></svg>';
 
-export function titlebar() {
+function skeleton() {
   return `<div class="tb-left" data-tauri-drag-region></div>
-    <div class="tb-find" data-tauri-drag-region>
-      <label class="find">${ICON_FIND}<input id="find" type="search" placeholder="Search models and documents" value="${esc(S.find.q)}" aria-label="Search models and documents" autocomplete="off"><kbd>${mod()}K</kbd></label>
-      ${S.find.open && S.find.results ? findResults() : ""}
-    </div>
-    <div class="tb-right" data-tauri-drag-region>${sandboxNote()}${jobsIndicator()}</div>`;
+    <div class="tb-mid" data-tauri-drag-region></div>
+    <div class="tb-right" data-tauri-drag-region>
+      <div class="tb-status" id="tb-status" data-tauri-drag-region></div>
+      <div class="tb-find" id="tb-find">
+        <label class="find" title="Search models and documents (${mod()}K)">${ICON_FIND}<input id="find" type="search" placeholder="Search models and documents" aria-label="Search models and documents" autocomplete="off"><kbd>${mod()}K</kbd></label>
+        <div id="find-results"></div>
+      </div>
+    </div>`;
+}
+
+const drawn = new WeakMap<Element, string>();
+function setHtml(el: Element | null, html: string) {
+  if (!el || drawn.get(el) === html) return;
+  drawn.set(el, html);
+  el.innerHTML = html;
+}
+
+/** Draw the title bar into its element, keeping the search field if it's already there. */
+export function drawTitlebar(box: HTMLElement) {
+  if (!box.querySelector("#find")) box.innerHTML = skeleton();
+  setHtml(box.querySelector("#tb-status"), sandboxNote() + jobsIndicator());
+  setHtml(box.querySelector("#find-results"), S.find.open && S.find.results ? findResults() : "");
+  box.querySelector("#tb-find")!.classList.toggle("open", S.find.expanded);
+  const input = box.querySelector<HTMLInputElement>("#find")!;
+  if (input.value !== S.find.q) input.value = S.find.q;
 }
 
 function findResults() {

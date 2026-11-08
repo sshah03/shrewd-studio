@@ -15,7 +15,7 @@ import { settingsPage } from "./views/settings";
 import { playgroundPage } from "./views/playground";
 import { sheet } from "./views/sheets";
 import { sidebar } from "./views/sidebar";
-import { titlebar } from "./views/titlebar";
+import { drawTitlebar } from "./views/titlebar";
 import { rowHtml, rowTop, tableWindow, tbodyHtml, thead } from "./views/table";
 
 const $ = (id: string) => document.getElementById(id) as HTMLElement;
@@ -65,7 +65,7 @@ function layer() {
 export function render() {
   let l = { html: "", sheetOpened: false, paneOpened: false };
   preserveFocus(() => {
-    $("titlebar").innerHTML = titlebar();
+    drawTitlebar($("titlebar"));
     $("app").classList.toggle("side-hidden", S.sideHidden);
     $("side").innerHTML = sidebar();
     $("view").innerHTML = page();
@@ -77,7 +77,7 @@ export function render() {
 
 /** Only the title bar (search results as you type). */
 export function renderTitlebar() {
-  preserveFocus(() => { $("titlebar").innerHTML = titlebar(); });
+  preserveFocus(() => drawTitlebar($("titlebar")));
 }
 
 /** Only the layer (a drawer's contents, a menu, a sheet). */
@@ -208,7 +208,7 @@ export function renderDetails() {
 /** After a jobs poll: the sidebar count, the Jobs page, and progress in method column headers. */
 export function renderJobs() {
   preserveFocus(() => {
-    $("titlebar").innerHTML = titlebar();
+    drawTitlebar($("titlebar"));
     $("side").innerHTML = sidebar();
     if (S.route.page === "jobs") $("view").innerHTML = jobsPage();
     else if (S.route.page === "settings" && S.jobs?.now.some(j => j.kind === "install")) $("view").innerHTML = settingsPage();
